@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from datetime import datetime, timedelta
+from collections import Counter
 from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders
 
 app = FastAPI(title="Factory Inventory Management System")
@@ -13,6 +15,12 @@ QUARTER_MAP = {
     'Q3-2025': ['2025-07', '2025-08', '2025-09'],
     'Q4-2025': ['2025-10', '2025-11', '2025-12']
 }
+
+# Per-warehouse lead time (days) for internal restocking orders. Drives
+# expected_delivery on /api/restocking submissions so the Submitted Orders
+# section can show realistic, warehouse-specific arrival windows.
+LEAD_TIMES = {"San Francisco": 7, "London": 10, "Tokyo": 14}
+DEFAULT_LEAD_TIME_DAYS = 10
 
 def filter_by_month(items: list, month: Optional[str]) -> list:
     """Filter items by month/quarter based on order_date field"""
@@ -119,6 +127,23 @@ class CreatePurchaseOrderRequest(BaseModel):
     unit_cost: float
     expected_delivery_date: str
     notes: Optional[str] = None
+
+class RestockingItem(BaseModel):
+    sku: str
+    name: str
+    # Reject zero/negative qty and negative cost so a malformed payload
+    # cannot create an order with nonsense total_value.
+    quantity: int = Field(gt=0)
+    unit_cost: float = Field(ge=0)
+    warehouse: str
+    category: Optional[str] = None
+
+class RestockingRequest(BaseModel):
+    items: List[RestockingItem]
+    # Informational: clients send the budget the user picked so it can be
+    # logged or echoed back later. The handler does not enforce it — the UI
+    # is responsible for keeping `items` within budget before submitting.
+    budget: Optional[float] = None
 
 # API endpoints
 @app.get("/")
@@ -303,6 +328,70 @@ def get_monthly_trends():
     result = list(months.values())
     result.sort(key=lambda x: x['month'])
     return result
+
+@app.post("/api/restocking", response_model=List[Order])
+def submit_restocking_order(request: RestockingRequest):
+    """Submit an internal restocking order.
+
+    Items are grouped by warehouse so each warehouse gets its own Order with
+    a per-warehouse lead time applied to expected_delivery.
+    """
+    if not request.items:
+        raise HTTPException(status_code=400, detail="No items to restock")
+
+    # Group by warehouse so each destination gets its own order + lead time.
+    grouped: dict[str, list[RestockingItem]] = {}
+    for item in request.items:
+        grouped.setdefault(item.warehouse, []).append(item)
+
+    # Continue numbering from the largest existing numeric id; non-numeric
+    # ids (none today) are ignored so we don't collide with them.
+    next_id = max((int(o["id"]) for o in orders if str(o["id"]).isdigit()), default=0)
+
+    created: List[dict] = []
+    now = datetime.now()
+    year = now.year
+
+    for warehouse, ws_items in grouped.items():
+        next_id += 1
+        lead_days = LEAD_TIMES.get(warehouse, DEFAULT_LEAD_TIME_DAYS)
+        expected = now + timedelta(days=lead_days)
+
+        # Pick a representative category for the order from its line items.
+        categories = [i.category for i in ws_items if i.category]
+        most_common_category = Counter(categories).most_common(1)[0][0] if categories else None
+
+        order_dict = {
+            "id": str(next_id),
+            "order_number": f"ORD-{year}-{next_id:04d}",
+            "customer": "Internal Restocking",
+            "items": [
+                {
+                    "sku": i.sku,
+                    "name": i.name,
+                    "quantity": i.quantity,
+                    # Existing orders.json uses unit_price on line items; mirror that.
+                    "unit_price": i.unit_cost,
+                }
+                for i in ws_items
+            ],
+            "status": "Submitted",
+            "order_date": now.isoformat(timespec="seconds"),
+            "expected_delivery": expected.isoformat(timespec="seconds"),
+            "total_value": round(sum(i.quantity * i.unit_cost for i in ws_items), 2),
+            "actual_delivery": None,
+            "warehouse": warehouse,
+            "category": most_common_category,
+        }
+
+        # Append to the shared in-memory orders list so subsequent
+        # GET /api/orders surfaces it. Persistence resets on server restart
+        # by design (see server/CLAUDE.md "Mock Data Management").
+        orders.append(order_dict)
+        created.append(order_dict)
+
+    return created
+
 
 if __name__ == "__main__":
     import uvicorn

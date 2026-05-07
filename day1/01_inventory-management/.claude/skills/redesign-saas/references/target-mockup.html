@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Redesign — Target Mockup</title>
+<style>
+/* === TOKENS (mirror of references/tokens.css, abbreviated) === */
+:root {
+  --space-1:.25rem; --space-2:.5rem; --space-3:.75rem; --space-4:1rem;
+  --space-5:1.25rem; --space-6:1.5rem; --space-8:2rem; --space-10:2.5rem;
+  --radius-md:6px; --radius-lg:10px; --radius-pill:999px;
+  --shadow-sm:0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.04);
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --text-xs:.75rem; --text-sm:.8125rem; --text-base:.875rem; --text-md:1rem; --text-lg:1.125rem;
+  --weight-medium:500; --weight-semibold:600;
+  --sidebar-width:240px; --header-height:56px;
+  --color-bg:#f8fafc; --color-surface:#fff; --color-surface-muted:#f1f5f9;
+  --color-text:#0f172a; --color-text-muted:#64748b; --color-text-faint:#94a3b8;
+  --color-border:#e2e8f0;
+  --color-accent:#2563eb; --color-accent-soft:#dbeafe; --color-accent-text:#1e40af;
+  --color-success:#15803d; --color-success-soft:#dcfce7;
+  --color-warning:#b45309; --color-warning-soft:#fef3c7;
+  --color-danger:#b91c1c; --color-danger-soft:#fee2e2;
+  --color-info:#1d4ed8; --color-info-soft:#dbeafe;
+}
+[data-theme="dark"] {
+  --color-bg:#0b1220; --color-surface:#111827; --color-surface-muted:#1f2937;
+  --color-text:#f1f5f9; --color-text-muted:#94a3b8; --color-text-faint:#64748b;
+  --color-border:#1f2937;
+  --color-accent:#3b82f6; --color-accent-soft:rgba(59,130,246,.16); --color-accent-text:#93c5fd;
+  --color-success:#4ade80; --color-success-soft:rgba(74,222,128,.14);
+  --color-warning:#fbbf24; --color-warning-soft:rgba(251,191,36,.14);
+  --color-danger:#f87171; --color-danger-soft:rgba(248,113,113,.14);
+  --color-info:#60a5fa; --color-info-soft:rgba(96,165,250,.14);
+}
+
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; background:var(--color-bg); color:var(--color-text); font-family:var(--font-sans); font-size:var(--text-base); }
+
+/* === SHELL === */
+.shell { display:grid; grid-template-columns: var(--sidebar-width) 1fr; min-height:100vh; }
+
+.sidebar {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.brand {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-5);
+  font-weight: var(--weight-semibold);
+  border-bottom: 1px solid var(--color-border);
+}
+.brand-mark { color: var(--color-accent); font-size: 18px; }
+
+.nav { display:flex; flex-direction:column; gap:2px; padding: var(--space-3); flex:1; }
+.nav-item {
+  display:flex; align-items:center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.nav-item:hover { background: var(--color-surface-muted); color: var(--color-text); }
+.nav-item.active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+  border-left-color: var(--color-accent);
+}
+.nav-icon { width: 20px; height: 20px; display: inline-flex; }
+
+.sidebar-footer { display:flex; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--color-border); }
+.icon-btn {
+  width:32px; height:32px; border-radius: var(--radius-md);
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  color: var(--color-text-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.icon-btn:hover { background: var(--color-surface-muted); color: var(--color-text); }
+
+/* === TOPBAR === */
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  height: var(--header-height); padding: 0 var(--space-8);
+  background: var(--color-surface); border-bottom: 1px solid var(--color-border);
+  position: sticky; top: 0; z-index: 5;
+}
+.crumbs { display:flex; gap: var(--space-2); align-items:center; color: var(--color-text-muted); }
+.crumb.current { color: var(--color-text); font-weight: var(--weight-semibold); }
+.crumb-sep { color: var(--color-text-faint); }
+.actions { display:flex; gap: var(--space-3); align-items:center; }
+
+.btn {
+  display:inline-flex; align-items:center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background: transparent; color: var(--color-text);
+  border: 1px solid var(--color-border);
+  font-weight: var(--weight-medium); font-size: var(--text-base);
+  cursor: pointer;
+}
+.btn:hover { background: var(--color-surface-muted); }
+.btn-primary { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+.btn-primary:hover { background: #1d4ed8; }
+
+/* === CONTENT === */
+.content { padding: var(--space-8); max-width: 1280px; margin: 0 auto; }
+
+.page-title { font-size: 1.5rem; margin: 0 0 var(--space-2); font-weight: var(--weight-semibold); letter-spacing: -0.01em; }
+.page-sub { color: var(--color-text-muted); margin: 0 0 var(--space-8); }
+
+.kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-5); margin-bottom: var(--space-8); }
+@media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+.card-header {
+  display:flex; align-items:center; justify-content: space-between;
+  padding-bottom: var(--space-4); margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.card-title { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+
+.kpi-label { color: var(--color-text-muted); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .06em; font-weight: var(--weight-semibold); margin-bottom: var(--space-2); }
+.kpi-value { font-size: 1.75rem; font-weight: var(--weight-semibold); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.kpi-meta { color: var(--color-text-muted); font-size: var(--text-sm); margin-top: var(--space-2); }
+.kpi-meta .pos { color: var(--color-success); font-weight: var(--weight-semibold); }
+
+.section-grid { display:grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); }
+@media (max-width: 980px) { .section-grid { grid-template-columns: 1fr; } }
+
+table { width: 100%; border-collapse: collapse; font-size: var(--text-base); }
+th { text-align: left; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-muted); font-weight: var(--weight-semibold); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); background: var(--color-surface-muted); }
+td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+tr:last-child td { border-bottom: 0; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.badge {
+  display:inline-flex; align-items: center; padding: 2px var(--space-2);
+  border-radius: var(--radius-pill); font-size: var(--text-xs); text-transform: uppercase;
+  letter-spacing: 0.04em; font-weight: var(--weight-semibold);
+}
+.badge.success { background: var(--color-success-soft); color: var(--color-success); }
+.badge.info    { background: var(--color-info-soft);    color: var(--color-info); }
+.badge.warning { background: var(--color-warning-soft); color: var(--color-warning); }
+.badge.danger  { background: var(--color-danger-soft);  color: var(--color-danger); }
+
+/* Activity list */
+.list { display:flex; flex-direction:column; gap: var(--space-3); }
+.row { display:flex; justify-content: space-between; align-items: center; padding: var(--space-2) 0; border-bottom: 1px dashed var(--color-border); }
+.row:last-child { border-bottom: 0; }
+.row .name { color: var(--color-text); font-weight: var(--weight-medium); }
+.row .meta { color: var(--color-text-muted); font-size: var(--text-sm); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">◆</span>
+      <span>Catalyst</span>
+    </div>
+    <nav class="nav">
+      <a class="nav-item active">
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg></span>
+        Overview
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6l7-3 7 3v8l-7 3-7-3V6z"/><path d="M3 6l7 3 7-3"/><path d="M10 9v9"/></svg></span>
+        Inventory
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h10l1 4H4l1-4z"/><path d="M4 8h12v8H4z"/></svg></span>
+        Orders
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17V7"/><path d="M8 17V11"/><path d="M13 17V4"/><path d="M18 17V9"/></svg></span>
+        Finance
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 14l4-4 3 3 7-7"/><path d="M13 6h4v4"/></svg></span>
+        Demand
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="12" height="14" rx="1.5"/><path d="M7 7h6"/><path d="M7 10h6"/><path d="M7 13h4"/></svg></span>
+        Reports
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="icon-btn" id="themeBtn" title="Toggle theme">☀</button>
+      <button class="icon-btn" title="Collapse sidebar">‹</button>
+    </div>
+  </aside>
+
+  <div>
+    <header class="topbar">
+      <nav class="crumbs">
+        <span class="crumb">Catalyst</span>
+        <span class="crumb-sep">/</span>
+        <span class="crumb current">Overview</span>
+      </nav>
+      <div class="actions">
+        <button class="btn">Export</button>
+        <button class="btn btn-primary">+ New order</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <h1 class="page-title">Overview</h1>
+      <p class="page-sub">A snapshot of inventory health, fulfillment, and spend.</p>
+
+      <div class="kpi-grid">
+        <div class="card">
+          <div class="kpi-label">Inventory value</div>
+          <div class="kpi-value">$3.84M</div>
+          <div class="kpi-meta"><span class="pos">+4.2%</span> vs last month</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Open orders</div>
+          <div class="kpi-value">128</div>
+          <div class="kpi-meta">12 awaiting dispatch</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Fill rate</div>
+          <div class="kpi-value">96.4%</div>
+          <div class="kpi-meta">Target 95%</div>
+        </div>
+        <div class="card">
+          <div class="kpi-label">Backlog</div>
+          <div class="kpi-value">7</div>
+          <div class="kpi-meta">2 high priority</div>
+        </div>
+      </div>
+
+      <div class="section-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent orders</h2>
+            <button class="btn">View all</button>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Order #</th><th>Customer</th><th>Status</th><th class="num">Value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ORD-2026-0251</td><td>Internal Restocking</td><td><span class="badge info">Submitted</span></td><td class="num">$31.00</td></tr>
+              <tr><td>ORD-2025-0244</td><td>MegaCorp Industries</td><td><span class="badge success">Delivered</span></td><td class="num">$12,840.00</td></tr>
+              <tr><td>ORD-2025-0240</td><td>Beacon Robotics</td><td><span class="badge warning">Processing</span></td><td class="num">$4,210.00</td></tr>
+              <tr><td>ORD-2025-0233</td><td>Linden Aerospace</td><td><span class="badge danger">Backordered</span></td><td class="num">$28,990.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Activity</h2>
+          </div>
+          <div class="list">
+            <div class="row"><span class="name">Restocking submitted</span><span class="meta">2 min ago</span></div>
+            <div class="row"><span class="name">PO created — BRG-102</span><span class="meta">14 min ago</span></div>
+            <div class="row"><span class="name">Forecast refreshed</span><span class="meta">1h ago</span></div>
+            <div class="row"><span class="name">Q1 report exported</span><span class="meta">Yesterday</span></div>
+            <div class="row"><span class="name">User invited: M. Tanaka</span><span class="meta">2 days ago</span></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // Click the sun/moon to preview dark mode in this mockup.
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const html = document.documentElement
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+    html.setAttribute('data-theme', next)
+    document.getElementById('themeBtn').textContent = next === 'dark' ? '☾' : '☀'
+  })
+</script>
+</body>
+</html>
