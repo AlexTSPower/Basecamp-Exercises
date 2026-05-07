@@ -49,6 +49,9 @@ logs/
 
 # Playwright MCP artifacts
 .playwright-mcp/
+*.png
+*.jpg
+*.jpeg
 
 # Environment variables
 .env

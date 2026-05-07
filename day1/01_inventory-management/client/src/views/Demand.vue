@@ -1,17 +1,12 @@
 <template>
   <div class="demand">
-    <div class="page-header">
-      <h2>{{ t('demand.title') }}</h2>
-      <p>{{ t('demand.description') }}</p>
-    </div>
-
     <div v-if="loading" class="loading">{{ t('common.loading') }}</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else>
       <div class="demand-trend-cards">
         <div class="trend-card increasing-card">
           <div class="trend-header">
-            <div class="trend-icon">↑</div>
+            <div class="trend-icon increasing-icon">&#8593;</div>
             <div>
               <div class="trend-label">{{ t('demand.increasingDemand') }}</div>
               <div class="trend-count">{{ t('demand.itemsCount', { count: getForecastsByTrend('increasing').length }) }}</div>
@@ -20,7 +15,7 @@
           <div class="trend-items">
             <div v-for="item in getForecastsByTrend('increasing').slice(0, 5)" :key="item.id" class="trend-item">
               <span class="item-name">{{ item.item_name }}</span>
-              <span class="item-change">+{{ getChangePercent(item) }}%</span>
+              <span class="item-change increasing-change">+{{ getChangePercent(item) }}%</span>
             </div>
             <div v-if="getForecastsByTrend('increasing').length > 5" class="more-items">
               +{{ getForecastsByTrend('increasing').length - 5 }} {{ t('demand.more') }}
@@ -30,7 +25,7 @@
 
         <div class="trend-card stable-card">
           <div class="trend-header">
-            <div class="trend-icon">→</div>
+            <div class="trend-icon stable-icon">&#8594;</div>
             <div>
               <div class="trend-label">{{ t('demand.stableDemand') }}</div>
               <div class="trend-count">{{ t('demand.itemsCount', { count: getForecastsByTrend('stable').length }) }}</div>
@@ -39,7 +34,7 @@
           <div class="trend-items">
             <div v-for="item in getForecastsByTrend('stable').slice(0, 5)" :key="item.id" class="trend-item">
               <span class="item-name">{{ item.item_name }}</span>
-              <span class="item-change neutral">{{ getChangePercent(item) }}%</span>
+              <span class="item-change stable-change">{{ getChangePercent(item) }}%</span>
             </div>
             <div v-if="getForecastsByTrend('stable').length > 5" class="more-items">
               +{{ getForecastsByTrend('stable').length - 5 }} {{ t('demand.more') }}
@@ -49,7 +44,7 @@
 
         <div class="trend-card decreasing-card">
           <div class="trend-header">
-            <div class="trend-icon">↓</div>
+            <div class="trend-icon decreasing-icon">&#8595;</div>
             <div>
               <div class="trend-label">{{ t('demand.decreasingDemand') }}</div>
               <div class="trend-count">{{ t('demand.itemsCount', { count: getForecastsByTrend('decreasing').length }) }}</div>
@@ -58,7 +53,7 @@
           <div class="trend-items">
             <div v-for="item in getForecastsByTrend('decreasing').slice(0, 5)" :key="item.id" class="trend-item">
               <span class="item-name">{{ item.item_name }}</span>
-              <span class="item-change">{{ getChangePercent(item) }}%</span>
+              <span class="item-change decreasing-change">{{ getChangePercent(item) }}%</span>
             </div>
             <div v-if="getForecastsByTrend('decreasing').length > 5" class="more-items">
               +{{ getForecastsByTrend('decreasing').length - 5 }} {{ t('demand.more') }}
@@ -72,7 +67,7 @@
           <h3 class="card-title">{{ t('demand.demandForecasts') }}</h3>
         </div>
         <div class="table-container">
-          <table>
+          <table class="table">
             <thead>
               <tr>
                 <th>{{ t('demand.table.sku') }}</th>
@@ -88,10 +83,10 @@
               <tr v-for="forecast in forecasts" :key="forecast.id">
                 <td><strong>{{ forecast.item_sku }}</strong></td>
                 <td>{{ forecast.item_name }}</td>
-                <td>{{ forecast.current_demand }}</td>
-                <td><strong>{{ forecast.forecasted_demand }}</strong></td>
+                <td class="num">{{ forecast.current_demand }}</td>
+                <td class="num"><strong>{{ forecast.forecasted_demand }}</strong></td>
                 <td>
-                  <span :style="{ color: getChangeColor(forecast) }">
+                  <span :class="['change-value', getTrendClass(forecast)]">
                     {{ getChangePercent(forecast) }}%
                   </span>
                 </td>
@@ -175,18 +170,13 @@ export default {
       return change > 0 ? `+${change}` : change
     }
 
-    const getChangeColor = (forecast) => {
+    const getTrendClass = (forecast) => {
       const change = forecast.forecasted_demand - forecast.current_demand
       const changePercent = Math.abs((change / forecast.current_demand) * 100)
-
-      // If change is within ±2%, consider it stable and show blue
-      if (changePercent <= 2) {
-        return '#3b82f6' // Blue for stable
-      }
-
-      if (change > 0) return '#10b981' // Green for increasing
-      if (change < 0) return '#ef4444' // Red for decreasing
-      return '#3b82f6' // Blue for no change
+      if (changePercent <= 2) return 'stable-change'
+      if (change > 0) return 'increasing-change'
+      if (change < 0) return 'decreasing-change'
+      return 'stable-change'
     }
 
     const translatePeriod = (period) => {
@@ -216,7 +206,7 @@ export default {
       forecasts,
       getForecastsByTrend,
       getChangePercent,
-      getChangeColor,
+      getTrendClass,
       translatePeriod
     }
   }
@@ -224,146 +214,127 @@ export default {
 </script>
 
 <style scoped>
+/* === Trend cards grid === */
 .demand-trend-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
 }
 
 .trend-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 1.5rem;
-  transition: all 0.2s ease;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  transition: box-shadow var(--duration-base) var(--ease-out);
 }
 
 .trend-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
-.increasing-card {
-  border-left: 4px solid #10b981;
-}
+/* Accent left borders using semantic tokens */
+.increasing-card  { border-left: 4px solid var(--color-success); }
+.stable-card      { border-left: 4px solid var(--color-info); }
+.decreasing-card  { border-left: 4px solid var(--color-danger); }
 
-.stable-card {
-  border-left: 4px solid #3b82f6;
-}
-
-.decreasing-card {
-  border-left: 4px solid #ef4444;
-}
-
+/* === Trend header === */
 .trend-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #f1f5f9;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-surface-muted);
 }
 
+/* Icon circles — soft bg + matching glyph */
 .trend-icon {
   width: 48px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  font-size: 1.75rem;
-  font-weight: 700;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
   flex-shrink: 0;
 }
 
-.increasing-card .trend-icon {
-  background: #d1fae5;
-  color: #059669;
-}
-
-.stable-card .trend-icon {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.decreasing-card .trend-icon {
-  background: #fee2e2;
-  color: #dc2626;
-}
+.increasing-icon  { background: var(--color-success-soft); color: var(--color-success); }
+.stable-icon      { background: var(--color-info-soft);    color: var(--color-info); }
+.decreasing-icon  { background: var(--color-danger-soft);  color: var(--color-danger); }
 
 .trend-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #64748b;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .trend-count {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-top: 0.25rem;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  margin-top: var(--space-1);
 }
 
+/* === Trend item rows === */
 .trend-items {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .trend-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0.75rem;
-  background: #f8fafc;
-  border-radius: 6px;
-  transition: background 0.2s;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .trend-item:hover {
-  background: #f1f5f9;
+  background: var(--color-surface-muted);
 }
 
 .item-name {
-  font-size: 0.875rem;
-  color: #0f172a;
-  font-weight: 500;
+  font-size: var(--text-base);
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-right: 1rem;
+  margin-right: var(--space-4);
 }
 
 .item-change {
-  font-size: 0.813rem;
-  font-weight: 700;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
   flex-shrink: 0;
 }
 
-.increasing-card .item-change {
-  color: #059669;
-}
-
-.stable-card .item-change {
-  color: #3b82f6;
-}
-
-.decreasing-card .item-change {
-  color: #dc2626;
-}
-
-.item-change.neutral {
-  color: #64748b;
-}
+/* Change value colors using semantic tokens */
+.increasing-change  { color: var(--color-success); }
+.stable-change      { color: var(--color-info); }
+.decreasing-change  { color: var(--color-danger); }
 
 .more-items {
-  font-size: 0.813rem;
-  color: #64748b;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
   font-style: italic;
   text-align: center;
-  padding: 0.5rem;
+  padding: var(--space-2);
+}
+
+/* Inline change column in table */
+.change-value {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
 }
 </style>
